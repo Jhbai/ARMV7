@@ -16,59 +16,23 @@ So, it can also simulate qemu-system-x86_64, qemu-system-mips ...etc.
 
 ## 2. A Project Structure
 ### startup.s
-    @ startup.s
-    .syntax unified
-    .cpu cortex-m7
-    .thumb
-    .global Reset_Handler
-    
-    @ The Vector Table
-    .section .isr_vector
-    .word   0x20020000      @ Initial Stack Pointer Value (Gave it a bit more space)
-    .word   Reset_Handler   @ 1. Reset Handler
-    .word   NMI_Handler     @ 2. NMI Handler
-    .word   HardFault_Handler @ 3. HardFault Handler
-    .word   0               @ 4. MemManage Handler
-    .word   0               @ 5. BusFault Handler
-    .word   0               @ 6. UsageFault Handler
-    .word   0               @ ... reserved
-    .word   0
-    .word   0
-    .word   0
-    .word   0               @ 11. SVCall Handler
-    .word   0               @ 12. Debug Monitor Handler
-    .word   0               @ 13. reserved
-    .word   0               @ 14. PendSV Handler
-    .word   0               @ 15. SysTick Handler
-    .word   UART0_Handler   @ 16. IRQ0: UART0 Interrupt
-    
-    
-    .section .text
-    .thumb_func
-    Reset_Handler:
-        @ Call the main function in C
-        bl      main
-    
-    @ After main returns (which it shouldn't), loop forever
-    Loop:
-        b       Loop
-    
-    @ A default handler for interrupts
-    .thumb_func
-    Default_Handler:
-        b       .
-    
-    @ Use the .weak directive to create default handlers.
-    @ If a function with the same name is defined in C,
-    @ the linker will use that one instead.
-    .weak NMI_Handler
-    .weak HardFault_Handler
-    .weak UART0_Handler
-    
-    NMI_Handler:
-    HardFault_Handler:
-    UART0_Handler:
-        b Default_Handler
+	@ startup.s for ARM926EJ-S on versatilepb
+	
+	.global _start
+	
+	.section .text
+	_start:
+	    @ Set up the stack pointer. 
+	    @ We use Supervisor mode, which is standard for bare-metal.
+	    ldr sp, =0x00100000  @ Stack grows downwards from 1MB mark
+	
+	    @ Branch to our C code's main function
+	    bl  main
+	
+	@ If main ever returns, loop forever here.
+	stop:
+	    b   stop
+
 
 
 A start-up code(Assembly), this is the first program MCU after powered, its tasks including
@@ -96,40 +60,35 @@ A start-up code(Assembly), this is the first program MCU after powered, its task
 Notice that the main function shall not return in bare machine embedded development.
 
 ### stm32h7.ld
-    ENTRY(Reset_Handler)
-    
-    MEMORY
-    {
-    	FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 128*1024
-    	RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 128*1024
-    }
-    
-    SECTIONS
-    {
-    	.isr_vector :
-    	{
-    		KEEP(*(.isr_vector))
-    	} > FLASH
-    	
-    	.text :
-    	{
-    		*(.text*)
-    	} > FLASH
-    	
-    	.data :
-    	{
-    		*(.data*)
-    	} > RAM AT > FLASH
-    
-    	.bss :
-    	{
-    		*(.bss*)
-    	} > RAM
-    }
+	/* linker.ld for versatilepb */
+	ENTRY(_start)
+	
+	MEMORY
+	{
+	  RAM (rwx) : ORIGIN = 0x00000000, LENGTH = 128M
+	}
+	
+	SECTIONS
+	{
+	    .text :
+	    {
+	        *(.text*)
+	    } > RAM
+	
+	    .data :
+	    {
+	        *(.data*)
+	    } > RAM
+	
+	    .bss :
+	    {
+	        *(.bss*)
+	    } > RAM
+	}
 Notice that linker script use "space" to identify elements, so "ORIGIN = 0x08000000" each blanks is necessary.
 
 ## 3. Compile and Activate binary code
-## $ arm-none-eabi-gcc -c -mcpu=cortex-m7 -mthumb -o startup.o startup.s
-## $ arm-none-eabi-gcc -c -mcpu=cortex-m7 -mthumb -o app.o app.c
+## $ arm-none-eabi-gcc -c -mcpu=arm926ej-s -o startup.o startup.s
+## $ arm-none-eabi-gcc -c -mcpu=arm926ej-s -o app.o app.c
 ## $ arm-none-eabi-ld -T stm32h7.ld -o firmware.elf startup.o app.o
-## $ qemu-system-arm -M versatilepb -kernel firmware.elf -nographic -serial stdio -monitor none
+## $ qemu-system-arm -M versatilepb -kernel firmware.elf -nographic
