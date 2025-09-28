@@ -126,3 +126,6 @@ A start-up code(Assembly), this is the first program MCU after powered, its task
     	} > RAM
     }
 Notice that linker script use "space" to identify elements, so "ORIGIN = 0x08000000" each blanks is necessary.
+
+## 3. Activate binary code
+## $ qemu-system-arm -M mps2-an500 -kernel firmware.elf -nographic -serial stdio -monitor none
