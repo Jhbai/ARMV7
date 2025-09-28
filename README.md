@@ -9,10 +9,10 @@ It simluates a hardware system, including
 So, it can also simulate qemu-system-x86_64, qemu-system-mips ...etc.
 
 ### $ sudo apt install gcc-arm-none-eabi binutils-arm-none-eabi gdb-multiarch
-gcc: GNU Compiler Collection
-arm-none-eabi: this means the gcc target, none means "Bare Machine", eabi means "Embedded Application Binary Interface".
-binutils: compile a program not only transform files into binary file, but a lot of tools used to dealing with binary files. including "as: assembler", "ld: linker", "objcopy: sw that makes .elf to .bin", "objdump: deassembly"
-gdb-multiarch: gdb is a debugger, multiarch means multi-architecture.
+1. gcc: GNU Compiler Collection
+2. arm-none-eabi: this means the gcc target, none means "Bare Machine", eabi means "Embedded Application Binary Interface".
+3. binutils: compile a program not only transform files into binary file, but a lot of tools used to dealing with binary files. including "as: assembler", "ld: linker", "objcopy: sw that makes .elf to .bin", "objdump: deassembly"
+4. gdb-multiarch: gdb is a debugger, multiarch means multi-architecture.
 
 ## 2. A Project Structure
 ### startup.s
