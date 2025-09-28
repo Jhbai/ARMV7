@@ -86,13 +86,14 @@ A start-up code(Assembly), this is the first program MCU after powered, its task
 
     int main(void){
 	    print_str("This is the test code, print string via UART");
+		while (1){};
 	    return 0;
     }
 
     void UART0_Handler(void){
 	    print_str("--- UART Interrupted Occured! --- \n");
     }
-
+Notice that the main function shall not return in bare machine embedded development.
 
 ### stm32h7.ld
     ENTRY(Reset_Handler)
