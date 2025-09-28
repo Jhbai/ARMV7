@@ -76,7 +76,7 @@ A start-up code(Assembly), this is the first program MCU after powered, its task
 2. Stack Pointer
 3. Call the C main program
 ### app.c
-    volatile unsigned int *const UART_DR = (unsigned int *)0x40004000;
+    volatile unsigned int *const UART_DR = (unsigned int *)0x101f1000; // the address to match the 'versatilepb' board's UART0
     void print_str(const char *s){
 	    while(*s != '\0'){
 		    *UART_DR = *s;
@@ -127,5 +127,8 @@ A start-up code(Assembly), this is the first program MCU after powered, its task
     }
 Notice that linker script use "space" to identify elements, so "ORIGIN = 0x08000000" each blanks is necessary.
 
-## 3. Activate binary code
-## $ qemu-system-arm -M mps2-an500 -kernel firmware.elf -nographic -serial stdio -monitor none
+## 3. Compile and Activate binary code
+## $ arm-none-eabi-gcc -c -mcpu=cortex-m7 -mthumb -o startup.o startup.s
+## $ arm-none-eabi-gcc -c -mcpu=cortex-m7 -mthumb -o app.o app.c
+## $ arm-none-eabi-ld -T stm32h7.ld -o firmware.elf startup.o app.o
+## $ qemu-system-arm -M versatilepb -kernel firmware.elf -nographic -serial stdio -monitor none
