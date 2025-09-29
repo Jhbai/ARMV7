@@ -32,13 +32,12 @@ So, it can also simulate qemu-system-x86_64, qemu-system-mips ...etc.
 	@ If main ever returns, loop forever here.
 	stop:
 	    b   stop
-
-
-
+Notice that there is always a blank line in the very end of the file, since in linux/unix, a text file always strictly defined as a file that composed with several lines, there is a ending character \n in each lines.
 A start-up code(Assembly), this is the first program MCU after powered, its tasks including
 1. IVT Set up
 2. Stack Pointer
 3. Call the C main program
+
 ### app.c
     volatile unsigned int *const UART_DR = (unsigned int *)0x101f1000; // the address to match the 'versatilepb' board's UART0
     void print_str(const char *s){
@@ -58,6 +57,7 @@ A start-up code(Assembly), this is the first program MCU after powered, its task
 	    print_str("--- UART Interrupted Occured! --- \n");
     }
 Notice that the main function shall not return in bare machine embedded development.
+the UART0 address of UART0 in versatilepb is 0x101f1000
 
 ### stm32h7.ld
 	/* linker.ld for versatilepb */
@@ -86,9 +86,56 @@ Notice that the main function shall not return in bare machine embedded developm
 	    } > RAM
 	}
 Notice that linker script use "space" to identify elements, so "ORIGIN = 0x08000000" each blanks is necessary.
+In each segments(like .isr_vector, .text), a clever definition that each output segments shall be placed in which memory region is necessary.
+the writing schema shall be <code>SECTION{SEGMENT{...} > MEMORY_LOCATION ... ...}</code>
 
-## 3. Compile and Activate binary code
-## $ arm-none-eabi-gcc -c -mcpu=arm926ej-s -o startup.o startup.s
-## $ arm-none-eabi-gcc -c -mcpu=arm926ej-s -o app.o app.c
-## $ arm-none-eabi-ld -T stm32h7.ld -o firmware.elf startup.o app.o
-## $ qemu-system-arm -M versatilepb -kernel firmware.elf -nographic
+## 3. Code Structure
+
+## 4. Compile and Activate binary code
+### $ arm-none-eabi-gcc -c -mcpu=arm926ej-s -o startup.o startup.s
+### $ arm-none-eabi-gcc -c -mcpu=arm926ej-s -o app.o app.c
+### $ arm-none-eabi-ld -T stm32h7.ld -o firmware.elf startup.o app.o
+All this command can be turned into a Makefile:
+
+	# The name of our final executable
+	TARGET = firmware.elf
+	
+	# Compiler and tools
+	CC = arm-none-eabi-gcc
+	LD = arm-none-eabi-ld
+	OBJCOPY = arm-none-eabi-objcopy
+	
+	# Compiler flags
+	CFLAGS = -c -mcpu=cortex-m7 -mthumb -g
+	LDFLAGS = -T stm32h7.ld
+	
+	# List of source files
+	SOURCES_S = startup.s
+	SOURCES_C = app.c
+	
+	# Generate list of object files from source files
+	OBJECTS = $(SOURCES_S:.s=.o) $(SOURCES_C:.c=.o)
+	
+	# The default rule to build everything
+	all: $(TARGET)
+	
+	# Rule to link the final executable
+	$(TARGET): $(OBJECTS)
+		$(LD) $(LDFLAGS) -o $@ $^
+	
+	# Rule to compile .s files into .o files
+	%.o: %.s
+		$(CC) $(CFLAGS) -o $@ $<
+	
+	# Rule to compile .c files into .o files
+	%.o: %.c
+		$(CC) $(CFLAGS) -o $@ $<
+	
+	# Rule to clean up generated files
+	clean:
+		rm -f $(OBJECTS) $(TARGET)
+Then use <code>make</code> and <code>make clean</code> to compile code
+
+### $ qemu-system-arm -M versatilepb -kernel firmware.elf -nographic
+<code> ALSA </code> 是 <code> Advanced Linux Sound Architecture </code>, the driver of sound card in linux system
+the architecture of versatilepb board is arm926ej-s
